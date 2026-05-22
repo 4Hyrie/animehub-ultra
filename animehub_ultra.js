@@ -1,5 +1,8 @@
 (function () {
 
+    // LampaS Plugin Registration
+    if (typeof Lampa === 'undefined') return;
+
     Lampa.Plugin.register('animehub_ultra', function (Lampa) {
 
         const API = 'https://shikimori.one/api/animes';
@@ -34,40 +37,54 @@
                 api('&order=ranked')
             ]).then(([latest, popular, top]) => {
 
+                let items = [];
+
+                // Continue Watching
+                const continueWatching = buildContinue();
+                if (continueWatching.length > 0) {
+                    items.push({
+                        title: 'Continue Watching',
+                        items: continueWatching
+                    });
+                }
+
+                items.push(
+                    {
+                        title: '🔥 Latest',
+                        items: cards(latest)
+                    },
+                    {
+                        title: '⭐ Popular',
+                        items: cards(popular)
+                    },
+                    {
+                        title: '🏆 Top Rated',
+                        items: cards(top)
+                    },
+                    {
+                        title: '❤️ Favorites',
+                        items: cards(fav)
+                    }
+                );
+
                 Lampa.Activity.push({
                     title: 'AnimeHub ULTRA',
                     component: 'category',
                     page: 1,
-                    source: [
-                        {
-                            title: 'Continue Watching',
-                            items: buildContinue()
-                        },
-                        {
-                            title: '🔥 Latest',
-                            items: cards(latest)
-                        },
-                        {
-                            title: '⭐ Popular',
-                            items: cards(popular)
-                        },
-                        {
-                            title: '🏆 Top Rated',
-                            items: cards(top)
-                        },
-                        {
-                            title: '❤️ Favorites',
-                            items: cards(fav)
-                        }
-                    ]
+                    source: items
                 });
 
+            }).catch(e => {
+                Lampa.Noty.show('Failed to load AnimeHub');
+                console.error('AnimeHub error:', e);
             });
 
         }
 
         // ===== CARDS =====
         function cards(data) {
+            if (!Array.isArray(data)) return [];
+            
             return data.map(a => ({
                 title: a.russian || a.name,
                 subtitle: `${a.score || '?'} ★ • ${a.kind}`,
@@ -82,7 +99,7 @@
         // ===== CONTINUE WATCHING =====
         function buildContinue() {
 
-            return Object.keys(progress).map(id => {
+            return Object.keys(progress).slice(0, 10).map(id => {
 
                 const a = progress[id];
 
@@ -92,7 +109,6 @@
                     image: a.image || '',
                     data: a,
                     action: function() {
-                        // Продолжить с текущего эпизода
                         const ep = (progress[a.id]?.ep || 1) + 1;
                         play(a, ep);
                     }
@@ -113,32 +129,28 @@
             }
             save();
 
+            const html = `
+                <div style="padding:20px;color:#fff;font-family:Arial,sans-serif">
+                    <h2 style="margin:0 0 20px 0">${anime.russian || anime.name}</h2>
+                    <img src="${anime.image?.original || ''}" style="width:100%;max-width:300px;border-radius:12px;margin-bottom:20px"/>
+                    <p style="margin:0 0 15px 0;line-height:1.6;color:#ccc">${anime.description || 'No description'}</p>
+                    <div style="margin:20px 0;font-size:14px;color:#aaa">
+                        <div style="margin:5px 0"><b>Rating:</b> ${anime.score || 'N/A'} ⭐</div>
+                        <div style="margin:5px 0"><b>Episodes:</b> ${anime.episodes || '?'}</div>
+                        <div style="margin:5px 0"><b>Type:</b> ${anime.kind || 'Unknown'}</div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:30px;flex-wrap:wrap">
+                        <button id="play" style="padding:10px 20px;background:#e50914;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">▶ Play</button>
+                        <button id="next" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">⏭ Next Episode</button>
+                        <button id="fav" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">${isFav ? '💔 Remove' : '❤️ Favorite'}</button>
+                    </div>
+                </div>
+            `;
+
             Lampa.Activity.push({
                 title: anime.russian || anime.name,
                 component: 'full',
-                html: `
-                    <div style="padding:20px;color:#fff;font-family:Arial,sans-serif">
-
-                        <h2 style="margin:0 0 20px 0">${anime.russian || anime.name}</h2>
-
-                        <img src="${anime.image?.original || ''}" style="width:100%;max-width:300px;border-radius:12px;margin-bottom:20px"/>
-
-                        <p style="margin:0 0 15px 0;line-height:1.6;color:#ccc">${anime.description || 'No description'}</p>
-
-                        <div style="margin:20px 0;font-size:14px;color:#aaa">
-                            <div style="margin:5px 0"><b>Rating:</b> ${anime.score || 'N/A'} ⭐</div>
-                            <div style="margin:5px 0"><b>Episodes:</b> ${anime.episodes || '?'}</div>
-                            <div style="margin:5px 0"><b>Type:</b> ${anime.kind || 'Unknown'}</div>
-                        </div>
-
-                        <div style="display:flex;gap:10px;margin-top:30px;flex-wrap:wrap">
-                            <button id="play" style="padding:10px 20px;background:#e50914;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">▶ Play</button>
-                            <button id="next" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">⏭ Next Episode</button>
-                            <button id="fav" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">${isFav ? '💔 Remove' : '❤️ Favorite'}</button>
-                        </div>
-
-                    </div>
-                `
+                html: html
             });
 
             setTimeout(() => {
@@ -163,8 +175,10 @@
 
                         if (isFav) {
                             fav = fav.filter(x => x.id !== anime.id);
+                            isFav = false;
                         } else {
                             fav.push(anime);
+                            isFav = true;
                         }
 
                         save();
@@ -190,7 +204,7 @@
 
             save();
 
-            // send to Lampa player (sources depend on installed plugins)
+            // send to Lampa player
             Lampa.Player.play({
                 title: `${anime.russian || anime.name} Episode ${episode}`,
                 query: `${anime.russian || anime.name} ${episode}`,
@@ -225,15 +239,27 @@
 
         }
 
-        // ===== CATALOG REGISTRATION =====
+        // ===== LAMPA-S CATALOG REGISTRATION =====
         function initCatalog() {
 
-            // Регистрируем в Lampa.Catalog
-            if (Lampa.Catalog) {
-                Lampa.Catalog.register({
+            // LampaS method для регистрации в левом меню
+            if (Lampa.Settings && Lampa.Settings.addShortcut) {
+                Lampa.Settings.addShortcut({
                     name: 'animehub_ultra',
                     title: '🎬 AnimeHub ULTRA',
                     description: 'Netflix-style anime streaming',
+                    icon: '🎬',
+                    action: function() {
+                        openHome();
+                    }
+                });
+            }
+
+            // Alternative для более старых версий
+            if (Lampa.MainPage && typeof Lampa.MainPage.add === 'function') {
+                Lampa.MainPage.add({
+                    name: 'animehub_ultra',
+                    title: '🎬 AnimeHub ULTRA',
                     icon: '🎬',
                     component: function() {
                         openHome();
@@ -246,16 +272,18 @@
         // ===== INIT =====
         try {
             initCatalog();
-            Lampa.Noty.show('AnimeHub ULTRA loaded ✓');
+            Lampa.Noty.show('✓ AnimeHub ULTRA loaded');
+            console.log('AnimeHub ULTRA: Plugin initialized successfully');
         } catch (e) {
-            console.error('AnimeHub init error:', e);
+            console.error('AnimeHub ULTRA error:', e);
             Lampa.Noty.show('AnimeHub ULTRA: initialization error');
         }
 
-        // GLOBAL
+        // GLOBAL API
         window.AnimeHub = {
             home: openHome,
-            search: search
+            search: search,
+            openAnime: openAnime
         };
 
     });
