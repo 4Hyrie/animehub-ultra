@@ -36,7 +36,7 @@
 
         menu_items.on("hover:enter", function () {
             if (Lampa.Noty) {
-                Lampa.Noty.show("AnimeHub ULTRA");
+                Lampa.Noty.show("AnimeHub ULTRA loaded");
             }
         });
 
