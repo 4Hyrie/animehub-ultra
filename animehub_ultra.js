@@ -68,7 +68,10 @@
                 title: a.russian || a.name,
                 subtitle: `${a.score || '?'} ★ • ${a.kind}`,
                 image: a.image?.preview || '',
-                data: a
+                data: a,
+                action: function() {
+                    openAnime(a);
+                }
             }));
         }
 
@@ -103,24 +106,25 @@
                 title: anime.russian || anime.name,
                 component: 'full',
                 html: `
-                    <div style="padding:20px">
+                    <div style="padding:20px;color:#fff;font-family:Arial,sans-serif">
 
-                        <h2>${anime.russian || anime.name}</h2>
+                        <h2 style="margin:0 0 20px 0">${anime.russian || anime.name}</h2>
 
-                        <img src="${anime.image?.original || ''}" style="width:100%;border-radius:12px"/>
+                        <img src="${anime.image?.original || ''}" style="width:100%;max-width:300px;border-radius:12px;margin-bottom:20px"/>
 
-                        <p style="margin-top:10px">${anime.description || ''}</p>
+                        <p style="margin:0 0 15px 0;line-height:1.6;color:#ccc">${anime.description || 'No description'}</p>
 
-                        <br>
+                        <div style="margin:20px 0;font-size:14px;color:#aaa">
+                            <div style="margin:5px 0"><b>Rating:</b> ${anime.score || 'N/A'} ⭐</div>
+                            <div style="margin:5px 0"><b>Episodes:</b> ${anime.episodes || '?'}</div>
+                            <div style="margin:5px 0"><b>Type:</b> ${anime.kind || 'Unknown'}</div>
+                        </div>
 
-                        <b>Rating:</b> ${anime.score || 'N/A'}<br>
-                        <b>Episodes:</b> ${anime.episodes || '?'}<br>
-
-                        <br>
-
-                        <button id="play">▶ Play</button>
-                        <button id="next">⏭ Next episode</button>
-                        <button id="fav">${isFav ? '💔 Remove' : '❤️ Favorite'}</button>
+                        <div style="display:flex;gap:10px;margin-top:30px;flex-wrap:wrap">
+                            <button id="play" style="padding:10px 20px;background:#e50914;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">▶ Play</button>
+                            <button id="next" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">⏭ Next Episode</button>
+                            <button id="fav" style="padding:10px 20px;background:#221f1f;color:#fff;border:1px solid #555;border-radius:5px;cursor:pointer;font-size:14px;font-weight:bold">${isFav ? '💔 Remove' : '❤️ Favorite'}</button>
+                        </div>
 
                     </div>
                 `
@@ -200,22 +204,31 @@
 
         }
 
-        // ===== MENU =====
+        // ===== CATALOG ENTRY =====
+        function createCatalogEntry() {
+            
+            return {
+                title: 'AnimeHub ULTRA',
+                description: 'Netflix-style anime streaming',
+                icon: '🎬',
+                action: function() {
+                    openHome();
+                }
+            };
+
+        }
+
+        // ===== MENU & CATALOG REGISTRATION =====
         function menu() {
 
-            Lampa.SettingsApi.addParam({
-                component: 'interface',
-                param: {
-                    name: 'animehub_ultra',
-                    type: 'trigger',
-                    default: false
-                },
-                field: {
-                    name: 'AnimeHub ULTRA',
-                    description: 'Netflix anime + watch progress + player'
-                },
-                onChange: v => {
-                    if (v) openHome();
+            // Добавляем в левый каталог (Catalog)
+            Lampa.Settings.addShortcut({
+                name: 'animehub_ultra',
+                title: '🎬 AnimeHub ULTRA',
+                description: 'Netflix-style anime streaming',
+                icon: '🎬',
+                action: function() {
+                    openHome();
                 }
             });
 
