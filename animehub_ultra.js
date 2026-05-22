@@ -1,6 +1,6 @@
 (function () {
 
-    Lampa.Plugin.register('animehub_ultra', function () {
+    Lampa.Plugin.register('animehub_ultra', function (Lampa) {
 
         const API = 'https://shikimori.one/api/animes';
 
@@ -18,7 +18,11 @@
         // ===== API =====
         function api(query = '') {
             return fetch(API + '?limit=20' + query)
-                .then(r => r.json());
+                .then(r => r.json())
+                .catch(e => {
+                    console.error('AnimeHub API error:', e);
+                    return [];
+                });
         }
 
         // ===== NETFLIX HOME =====
@@ -86,7 +90,12 @@
                     title: a.title,
                     subtitle: `Episode ${a.ep || 1}`,
                     image: a.image || '',
-                    data: a
+                    data: a,
+                    action: function() {
+                        // Продолжить с текущего эпизода
+                        const ep = (progress[a.id]?.ep || 1) + 1;
+                        play(a, ep);
+                    }
                 };
 
             });
@@ -99,7 +108,9 @@
             let isFav = fav.find(x => x.id === anime.id);
             let prog = progress[anime.id];
 
-            history.push(anime.id);
+            if (!history.includes(anime.id)) {
+                history.push(anime.id);
+            }
             save();
 
             Lampa.Activity.push({
@@ -132,25 +143,35 @@
 
             setTimeout(() => {
 
-                document.getElementById('play').onclick = () => play(anime, 1);
+                const playBtn = document.getElementById('play');
+                const nextBtn = document.getElementById('next');
+                const favBtn = document.getElementById('fav');
 
-                document.getElementById('next').onclick = () => {
-                    let ep = (prog?.ep || 1) + 1;
-                    play(anime, ep);
-                };
+                if (playBtn) {
+                    playBtn.onclick = () => play(anime, 1);
+                }
 
-                document.getElementById('fav').onclick = () => {
+                if (nextBtn) {
+                    nextBtn.onclick = () => {
+                        let ep = (prog?.ep || 1) + 1;
+                        play(anime, ep);
+                    };
+                }
 
-                    if (isFav) {
-                        fav = fav.filter(x => x.id !== anime.id);
-                    } else {
-                        fav.push(anime);
-                    }
+                if (favBtn) {
+                    favBtn.onclick = () => {
 
-                    save();
-                    Lampa.Noty.show('Updated favorites');
-                    openAnime(anime);
-                };
+                        if (isFav) {
+                            fav = fav.filter(x => x.id !== anime.id);
+                        } else {
+                            fav.push(anime);
+                        }
+
+                        save();
+                        Lampa.Noty.show('Updated favorites');
+                        openAnime(anime);
+                    };
+                }
 
             }, 200);
 
@@ -204,43 +225,32 @@
 
         }
 
-        // ===== CATALOG ENTRY =====
-        function createCatalogEntry() {
-            
-            return {
-                title: 'AnimeHub ULTRA',
-                description: 'Netflix-style anime streaming',
-                icon: '🎬',
-                action: function() {
-                    openHome();
-                }
-            };
+        // ===== CATALOG REGISTRATION =====
+        function initCatalog() {
 
-        }
-
-        // ===== MENU & CATALOG REGISTRATION =====
-        function menu() {
-
-            // Добавляем в левый каталог (Catalog)
-            Lampa.Settings.addShortcut({
-                name: 'animehub_ultra',
-                title: '🎬 AnimeHub ULTRA',
-                description: 'Netflix-style anime streaming',
-                icon: '🎬',
-                action: function() {
-                    openHome();
-                }
-            });
+            // Регистрируем в Lampa.Catalog
+            if (Lampa.Catalog) {
+                Lampa.Catalog.register({
+                    name: 'animehub_ultra',
+                    title: '🎬 AnimeHub ULTRA',
+                    description: 'Netflix-style anime streaming',
+                    icon: '🎬',
+                    component: function() {
+                        openHome();
+                    }
+                });
+            }
 
         }
 
         // ===== INIT =====
-        Lampa.Listener.follow('app', e => {
-            if (e.type === 'ready') {
-                menu();
-                Lampa.Noty.show('AnimeHub ULTRA loaded');
-            }
-        });
+        try {
+            initCatalog();
+            Lampa.Noty.show('AnimeHub ULTRA loaded ✓');
+        } catch (e) {
+            console.error('AnimeHub init error:', e);
+            Lampa.Noty.show('AnimeHub ULTRA: initialization error');
+        }
 
         // GLOBAL
         window.AnimeHub = {
