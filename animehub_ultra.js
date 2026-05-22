@@ -1,32 +1,66 @@
 (function () {
 
-    if (typeof Lampa === 'undefined') return;
+    'use strict';
 
-    Lampa.Plugin.register('animehub_ultra', function (Lampa) {
+    window.animeHubUltra = function(Lampa) {
+        
+        console.log('AnimeHub ULTRA: Initializing...');
 
-        // ===== REGISTRATION IN LEFT MENU =====
-        function initCatalog() {
-            if (Lampa.Settings && Lampa.Settings.addShortcut) {
-                Lampa.Settings.addShortcut({
+        // Check if Lampa exists
+        if (!Lampa || !Lampa.Plugin) {
+            console.error('AnimeHub ULTRA: Lampa not available');
+            return false;
+        }
+
+        // Register catalog entry
+        if (Lampa.MainPage && Lampa.MainPage.add) {
+            try {
+                Lampa.MainPage.add({
                     name: 'animehub_ultra',
                     title: '🎬 AnimeHub ULTRA',
-                    description: 'Anime catalog',
                     icon: '🎬',
-                    action: function() {
-                        Lampa.Noty.show('AnimeHub ULTRA');
+                    component: function() {
+                        if (Lampa.Noty) {
+                            Lampa.Noty.show('AnimeHub ULTRA');
+                        }
                     }
                 });
+                console.log('AnimeHub ULTRA: Registered in MainPage');
+                return true;
+            } catch(e) {
+                console.error('AnimeHub ULTRA: MainPage error', e);
             }
         }
 
-        // ===== INIT =====
-        try {
-            initCatalog();
-            console.log('AnimeHub ULTRA: Loaded');
-        } catch (e) {
-            console.error('AnimeHub error:', e);
+        // Alternative: Try catalog
+        if (Lampa.Catalog && Lampa.Catalog.add) {
+            try {
+                Lampa.Catalog.add({
+                    name: 'animehub_ultra',
+                    title: '🎬 AnimeHub ULTRA',
+                    icon: '🎬',
+                    component: 'animehub_ultra'
+                });
+                console.log('AnimeHub ULTRA: Registered in Catalog');
+                return true;
+            } catch(e) {
+                console.error('AnimeHub ULTRA: Catalog error', e);
+            }
         }
 
-    });
+        return false;
+    };
+
+    // Try to register immediately
+    if (window.Lampa) {
+        window.animeHubUltra(window.Lampa);
+    } else {
+        // Wait for Lampa to load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.Lampa) {
+                window.animeHubUltra(window.Lampa);
+            }
+        });
+    }
 
 })();
